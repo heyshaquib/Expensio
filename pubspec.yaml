@@ -1,0 +1,76 @@
+name: expensio
+description: "Expensio - Premium Android expense tracker. 100% on-device, fully manual."
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.7.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # State Management
+  flutter_riverpod: ^2.6.1
+
+  # Database
+  drift: ^2.22.1
+  sqlite3_flutter_libs: ^0.5.28
+  path_provider: ^2.1.5
+  path: ^1.9.1
+
+  # Charts
+  fl_chart: ^0.70.2
+
+  # Animations
+  flutter_animate: ^4.5.2
+
+  # Formatting
+  intl: ^0.19.0
+
+  # Dynamic Color (Monet)
+  dynamic_color: ^1.7.0
+
+  # Local Storage
+  shared_preferences: ^2.3.4
+
+  # Utilities
+  uuid: ^4.5.1
+
+  flutter_native_splash: ^2.4.7
+  file_picker: ^10.3.10
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  drift_dev: ^2.22.1
+  build_runner: ^2.4.14
+  flutter_launcher_icons: ^0.14.4
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/logo/
+  fonts:
+    - family: Outfit
+      fonts:
+        - asset: assets/fonts/Outfit-Variable.ttf
+    - family: PlusJakartaSans
+      fonts:
+        - asset: assets/fonts/PlusJakartaSans-Variable.ttf
+
+flutter_launcher_icons:
+  android: "ic_launcher"
+  ios: false
+  image_path: "assets/logo/wallet_icon.svg"
+  min_sdk_android: 24
+  adaptive_icon_background: "#1C1B2E"
+  adaptive_icon_foreground: "assets/logo/wallet_icon.svg"
+
+flutter_native_splash:
+  color: "#1C1B2E"
+  image: "assets/logo/wallet_icon.svg"
+  android_12:
+    color: "#1C1B2E"
+    image: "assets/logo/wallet_icon.svg"
