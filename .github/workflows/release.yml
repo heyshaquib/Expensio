@@ -102,6 +102,7 @@ jobs:
         git commit -m "chore(release): set version to ${{ inputs.version_name }} and bump build number"
         for attempt in 1 2 3; do
           if git push origin "HEAD:refs/heads/$BRANCH_NAME"; then break; fi
+          git restore . 2>/dev/null || true
           git pull --rebase origin "refs/heads/$BRANCH_NAME"
           sleep 2
         done
