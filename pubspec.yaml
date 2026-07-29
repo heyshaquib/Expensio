@@ -1,7 +1,7 @@
 name: expensio
 description: "Expensio - Premium Android expense tracker. 100% on-device, fully manual."
 publish_to: 'none'
-version: 1.0.1+2
+version: 1.0.2+3
 
 environment:
   sdk: ^3.7.0
