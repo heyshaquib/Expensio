@@ -1,0 +1,83 @@
+name: Preview Build
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: preview-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  preview:
+    name: Build debug APK
+    if: github.actor == github.repository_owner || github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.7.x'
+          channel: 'stable'
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build debug APK
+        run: flutter build apk --debug
+
+      - name: Collect APK and compute checksums
+        id: apk
+        run: |
+          set -euo pipefail
+          APK=$(find build/app/outputs/flutter-apk -name 'app-debug.apk' | head -n1)
+          if [ -z "$APK" ]; then
+            echo "::error::No debug APK found under build/app/outputs/flutter-apk"
+            exit 1
+          fi
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          SAFE_REF=$(echo "${GITHUB_REF_NAME}" | tr '/ ' '__')
+          DEST="Expensio-debug-${SAFE_REF}-${SHORT_SHA}.apk"
+          cp "$APK" "$DEST"
+
+          SHA256=$(sha256sum "$DEST" | awk '{print $1}')
+          SHA1=$(sha1sum "$DEST" | awk '{print $1}')
+          MD5=$(md5sum "$DEST" | awk '{print $1}')
+          SIZE=$(du -h "$DEST" | cut -f1)
+
+          echo "apk_name=${DEST}" >> "$GITHUB_OUTPUT"
+
+          {
+            echo "**Preview build of \`${GITHUB_REF_NAME}\`**"
+            echo ""
+            echo "| Field | Value |"
+            echo "| --- | --- |"
+            echo "| File | \`${DEST}\` |"
+            echo "| Branch | \`${GITHUB_REF_NAME}\` |"
+            echo "| Commit | \`${SHORT_SHA}\` |"
+            echo "| Size | ${SIZE} |"
+            echo "| SHA-256 | \`${SHA256}\` |"
+            echo "| SHA-1 | \`${SHA1}\` |"
+            echo "| MD5 | \`${MD5}\` |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload APK as a workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.apk.outputs.apk_name }}
+          path: ${{ steps.apk.outputs.apk_name }}
+          if-no-files-found: error
+          retention-days: 30
