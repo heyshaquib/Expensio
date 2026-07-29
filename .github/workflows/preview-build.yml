@@ -35,48 +35,48 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Build debug APK
-        run: flutter build apk --debug
+      - name: Build debug APKs
+        run: |
+          flutter build apk --debug
+          flutter build apk --debug --split-per-abi
 
-      - name: Collect APK and compute checksums
+      - name: Collect APKs and compute checksums
         id: apk
         run: |
           set -euo pipefail
-          APK=$(find build/app/outputs/flutter-apk -name 'app-debug.apk' | head -n1)
-          if [ -z "$APK" ]; then
-            echo "::error::No debug APK found under build/app/outputs/flutter-apk"
-            exit 1
-          fi
           SHORT_SHA=$(git rev-parse --short HEAD)
           SAFE_REF=$(echo "${GITHUB_REF_NAME}" | tr '/ ' '__')
-          DEST="Expensio-debug-${SAFE_REF}-${SHORT_SHA}.apk"
-          cp "$APK" "$DEST"
+          mkdir -p apks_to_upload
+          
+          echo "**Preview build of \`${GITHUB_REF_NAME}\`**" > "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "| File | Size | SHA-256 |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| --- | --- | --- |" >> "$GITHUB_STEP_SUMMARY"
 
-          SHA256=$(sha256sum "$DEST" | awk '{print $1}')
-          SHA1=$(sha1sum "$DEST" | awk '{print $1}')
-          MD5=$(md5sum "$DEST" | awk '{print $1}')
-          SIZE=$(du -h "$DEST" | cut -f1)
+          for APK in build/app/outputs/flutter-apk/*.apk; do
+            [ -e "$APK" ] || continue
+            BASENAME=$(basename "$APK")
+            ARCH=$(echo "$BASENAME" | sed 's/app-//' | sed 's/-debug\.apk//' | sed 's/\.apk//')
+            if [ -z "$ARCH" ]; then
+              ARCH="universal"
+            fi
+            
+            DEST="apks_to_upload/Expensio-${ARCH}-debug-${SAFE_REF}-${SHORT_SHA}.apk"
+            cp "$APK" "$DEST"
+            
+            SHA256=$(sha256sum "$DEST" | awk '{print $1}')
+            SIZE=$(du -h "$DEST" | cut -f1)
+            
+            DEST_BASENAME=$(basename "$DEST")
+            echo "| \`${DEST_BASENAME}\` | ${SIZE} | \`${SHA256}\` |" >> "$GITHUB_STEP_SUMMARY"
+          done
 
-          echo "apk_name=${DEST}" >> "$GITHUB_OUTPUT"
+          echo "artifact_name=Expensio-Preview-${SAFE_REF}-${SHORT_SHA}" >> "$GITHUB_OUTPUT"
 
-          {
-            echo "**Preview build of \`${GITHUB_REF_NAME}\`**"
-            echo ""
-            echo "| Field | Value |"
-            echo "| --- | --- |"
-            echo "| File | \`${DEST}\` |"
-            echo "| Branch | \`${GITHUB_REF_NAME}\` |"
-            echo "| Commit | \`${SHORT_SHA}\` |"
-            echo "| Size | ${SIZE} |"
-            echo "| SHA-256 | \`${SHA256}\` |"
-            echo "| SHA-1 | \`${SHA1}\` |"
-            echo "| MD5 | \`${MD5}\` |"
-          } >> "$GITHUB_STEP_SUMMARY"
-
-      - name: Upload APK as a workflow artifact
+      - name: Upload APKs as a workflow artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ steps.apk.outputs.apk_name }}
-          path: ${{ steps.apk.outputs.apk_name }}
+          name: ${{ steps.apk.outputs.artifact_name }}
+          path: apks_to_upload/*.apk
           if-no-files-found: error
           retention-days: 30
