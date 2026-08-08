@@ -57,9 +57,9 @@ class SettingsScreen extends ConsumerWidget {
           // About
           SectionHeader('ABOUT'),
           ListTile(
-            leading: const Icon(Icons.info_outline),
-            title: const Text('Expensio'),
-            subtitle: const Text('Version 1.0.0'),
+            leading: const Icon(Icons.info),
+            title: const Text('About'),
+            subtitle: const Text('About And Licenses'),
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
               Navigator.push(
